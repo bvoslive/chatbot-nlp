@@ -3,6 +3,8 @@ from sklearn.preprocessing import LabelEncoder
 import string
 from unidecode import unidecode
 from fuzzywuzzy import fuzz
+from sklearn.feature_extraction.text import CountVectorizer
+import numpy as np
 
 import nltk
 nltk.download('stopwords')
@@ -70,7 +72,7 @@ num_teste = num_teste.tolist()
 
 
 #ELIMINANDO FUZZY
-def corrige_numeros(frase_cliente, THRESHOLD = 80):
+def corrige_numeros(frase_cliente, THRESHOLD = 70):
 
     frase_cliente = frase_cliente.split(' ')
 
@@ -89,6 +91,8 @@ def corrige_numeros(frase_cliente, THRESHOLD = 80):
 
 
 df_test['frase_cliente'] = df_test['frase_cliente'].apply(corrige_numeros)
+
+
 
 
 
@@ -125,24 +129,59 @@ df_test['intent'] = lb2.fit_transform(df_test['intent'])
 
 
 
-qnt_int = len(df_test) / 2
-
+qnt_int = int(len(df_test) / 2)
 
 
 
 x = []
 y = []
 
-frase_1 = df_test[0:2].iloc[0]['frase_cliente']
-frase_2 = df_test[0:2].iloc[1]['frase_cliente']
 
-intencao_1 = df_test[0:2].iloc[0]['intent']
-intencao_2 = df_test[0:2].iloc[1]['intent']
-
-
-x.append(frase_1 + ' ' + frase_2)
-y.append([intencao_1, intencao_2])
+for i in range(0, len(df_test), 2):
+    print(i)
+    print(i+1)
+    print('--------------')
 
 
 
 
+
+for i in range(0, len(df_test), 2):
+    frase_1 = df_test['frase_cliente'][i]
+    frase_2 = df_test['frase_cliente'][i+1]
+
+    intencao_2 = df_test['intent'][i+1]
+
+    x.append(frase_1 + ' ' + frase_2)
+    y.append(intencao_2)
+
+
+
+
+
+
+
+
+pd.DataFrame(y).drop_duplicates()
+
+
+vectorizer = CountVectorizer()
+X = vectorizer.fit_transform(x)
+
+
+from sklearn.naive_bayes import MultinomialNB
+
+
+nb_tfidf = MultinomialNB()
+nb_tfidf.fit(X, y)
+
+y_pred = nb_tfidf.predict(X)
+
+
+
+pd.DataFrame({'y':y, 'pred':y_pred})
+
+
+
+
+x[2]
