@@ -100,9 +100,6 @@ for i in range(0, len(df_test), 2):
 
 
 
-
-
-
 def eliminando_stopwords(frase):
 
     tokens = frase.split(' ')
@@ -139,7 +136,6 @@ df_test['intent'] = lb2.fit_transform(df_test['intent'])
 
 
 
-
 x = []
 y = []
 
@@ -162,11 +158,55 @@ X = vectorizer.fit_transform(x)
 
 
 
+
+
 nb_tfidf = GaussianNB()
 nb_tfidf.fit(X.toarray(), y)
 
 y_pred = nb_tfidf.predict(X.toarray())
 
-pd.DataFrame({'y':y, 'pred':y_pred})
+
+from sklearn.metrics import accuracy_score
+
+# RESULTADO DA ACURÁCIA
+accuracy_score(y, y_pred)
+
+
+resultado_predicao = lb2.inverse_transform(y_pred)
+
+resultado_predicao = pd.Series(resultado_predicao)
+resultado_predicao.to_csv('preenchimento_valores_vazios.csv')
+
+
+
+# INSIGHTS
+
+len(resultado_predicao)
+
+bag_of_words = pd.DataFrame(X.toarray())
+
+colunas = list(vectorizer.get_feature_names_out())
+
+bag_of_words.columns = colunas
+
+
+colunas_sem_numeros = [coluna for coluna in colunas if coluna not in n_extensos['EXTENSO'].tolist()]
+
+
+bag_of_words_sem_dec_final = bag_of_words[colunas_sem_numeros]
+
+
+bag_of_words_sem_dec_final_soma = bag_of_words_sem_dec_final.sum()
+bag_of_words_sem_dec_final_soma = bag_of_words_sem_dec_final_soma.sort_values(ascending=False)
+bag_of_words_sem_dec_final_soma = bag_of_words_sem_dec_final_soma[:9]
+
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+plt.bar(bag_of_words_sem_dec_final_soma.index, bag_of_words_sem_dec_final_soma)
+plt.title('Frequência de Palavras')
+plt.show()
 
 
