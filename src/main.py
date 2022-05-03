@@ -5,12 +5,15 @@ from unidecode import unidecode
 from fuzzywuzzy import fuzz
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
+from sklearn.naive_bayes import GaussianNB
 
 import nltk
 nltk.download('stopwords')
 
 stopwords = nltk.corpus.stopwords.words('portuguese')
 
+
+stopwords.remove('um')
 
 
 
@@ -37,9 +40,7 @@ def substitui_numero_extenso(frase_cliente):
 
 df_test['frase_cliente'] = df_test['frase_cliente'].str.replace('0', '')
 
-
 df_test['frase_cliente'] = df_test['frase_cliente'].apply(substitui_numero_extenso)
-
 
 pontuacoes = string.punctuation
 
@@ -56,12 +57,7 @@ df_test['frase_cliente'] = df_test['frase_cliente'].apply(unidecode)
 #frases_cliente = df_test['frase_cliente'].str.split()
 
 
-
-
 num_teste = n_extensos['EXTENSO'].apply(unidecode)
-
-
-
 
 num_teste = num_teste.tolist()
 
@@ -90,7 +86,16 @@ def corrige_numeros(frase_cliente, THRESHOLD = 75):
 
 
 
-df_test['frase_cliente'] = df_test['frase_cliente'].apply(corrige_numeros)
+
+for i in range(0, len(df_test), 2):
+    df_test['frase_cliente'][i+1] = corrige_numeros(df_test['frase_cliente'][i+1])
+
+
+    item_escolha = df_test['frase_cliente'][i+1].split(' ')
+
+    for token in item_escolha:
+        if token in n_extensos['EXTENSO'].tolist():
+            df_test['frase_cliente'][i+1] = token
 
 
 
@@ -113,6 +118,9 @@ def eliminando_stopwords(frase):
     frase = frase.replace('ELIMINA', '')
 
     return frase
+
+
+
 
 df_test['frase_cliente'] = df_test['frase_cliente'].apply(eliminando_stopwords)
 
@@ -139,18 +147,7 @@ for i in range(0, len(df_test), 2):
     frase_1 = df_test['frase_cliente'][i]
     frase_2 = df_test['frase_cliente'][i+1]
 
-
     frase_2_splited = frase_2.split()
-
-
-
-
-    for j in range(len(frase_2_splited)):
-
-        if frase_2_splited[j] in n_extensos['EXTENSO'].tolist():
-            
-
-
 
     intencao_2 = df_test['intent'][i+1]
 
@@ -158,29 +155,18 @@ for i in range(0, len(df_test), 2):
     y.append(intencao_2)
 
 
-
-y
-
-
-
-
-
 vectorizer = CountVectorizer()
 X = vectorizer.fit_transform(x)
 
 
-from sklearn.naive_bayes import GaussianNB
+
 
 
 nb_tfidf = GaussianNB()
-nb_tfidf.fit(X, y)
+nb_tfidf.fit(X.toarray(), y)
 
-y_pred = nb_tfidf.predict(X)
-
+y_pred = nb_tfidf.predict(X.toarray())
 
 pd.DataFrame({'y':y, 'pred':y_pred})
-
-
-
 
 
